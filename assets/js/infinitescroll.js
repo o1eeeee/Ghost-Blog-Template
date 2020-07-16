@@ -1,11 +1,10 @@
 /* global maxPages */
 
 // Code snippet inspired by https://github.com/douglasrodrigues5/ghost-blog-infinite-scroll
-$(function ($) {
+ready(function () {
     var currentPage = 1;
     var pathname = window.location.pathname;
-    var $document = $(document);
-    var $result = $('.gh-postfeed');
+    var $result = document.querySelectorAll('.gh-postfeed');
     var buffer = 300;
 
     var ticking = false;
@@ -13,7 +12,12 @@ $(function ($) {
 
     var lastScrollY = window.scrollY;
     var lastWindowHeight = window.innerHeight;
-    var lastDocumentHeight = $document.height();
+    var lastDocumentHeight = getDocumentHeight();
+
+    function getDocumentHeight() {
+        return Math.max( document.body.scrollHeight, document.body.offsetHeight, 
+            document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight );
+    }
 
     function onScroll() {
         lastScrollY = window.scrollY;
@@ -22,7 +26,7 @@ $(function ($) {
 
     function onResize() {
         lastWindowHeight = window.innerHeight;
-        lastDocumentHeight = $document.height();
+        lastDocumentHeight = getDocumentHeight();
         requestTick();
     }
 
@@ -87,25 +91,31 @@ $(function ($) {
         // Load more
         var nextPage = pathname + 'page/' + currentPage + '/';
 
-        $.get(nextPage, function (content) {
-            var parse = document.createRange().createContextualFragment(content);
-            var posts = parse.querySelectorAll('.post');
-            if (posts.length) {
-                [].forEach.call(posts, function (post) {
-                    $result[0].appendChild(post);
-                });
+        var ajaxRequest = new XMLHttpRequest();
+        ajaxRequest.open('GET', nextPage, true);
+
+        ajaxRequest.onload = function() {
+            if (this.status >= 200 && this.status < 400) {
+                var parse = document.createRange().createContextualFragment(this.response);
+                var posts = parse.querySelectorAll('.post');
+                if (posts.length) {
+                    [].forEach.call(posts, function (post) {
+                        $result[0].appendChild(post);
+                    });
+                }
+                else if (this.status === 404) {
+                    window.removeEventListener('scroll', onScroll, {passive: true});
+                    indow.removeEventListener('resize', onResize);
+                }
             }
-        }).fail(function (xhr) {
-            // 404 indicates we've run out of pages
-            if (xhr.status === 404) {
-                window.removeEventListener('scroll', onScroll, {passive: true});
-                window.removeEventListener('resize', onResize);
-            }
-        }).always(function () {
-            lastDocumentHeight = $document.height();
+            lastDocumentHeight = getDocumentHeight();
             isLoading = false;
             ticking = false;
-        });
+        };
+
+        ajaxRequest.onerror = function() {};
+
+        ajaxRequest.send();
     }
 
     window.addEventListener('scroll', onScroll, {passive: true});

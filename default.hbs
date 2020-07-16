@@ -72,7 +72,15 @@
 
 {{!-- <foot> --}}
 
-<script src="{{asset "built/jquery-3.4.1.min.js"}}"></script>
+<script>
+    function ready(fn) {
+        if (document.readyState != 'loading'){
+            fn();
+        } else {
+            document.addEventListener('DOMContentLoaded', fn);
+        }
+    }
+</script>
 
 {{#if pagination.pages}}
 <script>
@@ -82,16 +90,16 @@
 {{/if}}
 
 <script>
-$(document).ready(function () {
+ready(function () {
     // Mobile Menu Trigger
-    $('.gh-burger').click(function () {
-        $('body').toggleClass('gh-head-open');
+    document.querySelectorAll('.gh-burger')[0].addEventListener('click', function () {
+        console.log(document.body)
+        document.body.classList.toggle('gh-head-open');
     });
 });
 </script>
 
 {{#is "post, page"}}
-<script src="{{asset "built/jquery.fitvids.js"}}"></script>
 <script>
 var images = document.querySelectorAll('.kg-gallery-image img');
 images.forEach(function (image) {
@@ -100,10 +108,6 @@ images.forEach(function (image) {
     var height = image.attributes.height.value;
     var ratio = width / height;
     container.style.flex = ratio + ' 1 0%';
-});
-$(document).ready(function () {
-    var $postContent = $(".gh-content");
-    $postContent.fitVids();
 });
 </script>
 {{/is}}
